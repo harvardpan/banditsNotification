@@ -1,0 +1,19 @@
+# nyc test coverage
+.nyc_output
+coverage/
+
+# Dependency directories
+node_modules/
+
+# Environment Variable Files
+.env
+
+.DS_Store
+
+archive/*.json
+archive/*.png
+
+# Local Files used in processing
+previousSchedule.json
+previousScreenshot.png
+sampleScreenshot.png
