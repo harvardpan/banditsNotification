@@ -4,7 +4,8 @@
   "description": "Script that periodically checks the Bandits 12U web page and tweets out a screenshot when there are changes.",
   "main": "index.js",
   "scripts": {
-    "test": "mocha 'test/**/*.test.js'"
+    "test": "mocha 'test/**/*.test.js'",
+    "start": "node index.js"
   },
   "author": "Harvard Pan",
   "license": "MIT",
@@ -14,7 +15,7 @@
     "chrono-node": "^2.7.0",
     "dotenv": "^16.3.1",
     "moment-timezone": "^0.5.43",
-    "puppeteer": "^21.3.6",
+    "puppeteer": "^21.3.8",
     "twitter-api-v2": "^1.15.1"
   },
   "devDependencies": {
