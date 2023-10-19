@@ -99,6 +99,7 @@ async function main() {
     await tweetScreenshot(screenshotFilename);
     fs.unlinkSync(screenshotFilename);
   } catch (e) {
+    logMessage('ERROR: Uncaught exception occurred');
     console.log(e);
   } finally {
     await browser.close();

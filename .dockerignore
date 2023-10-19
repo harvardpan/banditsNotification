@@ -4,10 +4,12 @@ coverage
 
 node_modules
 npm-debug.log
-test/
-test/**
 archive/**
 .gitignore
 .dockerignore
 .DS_Store
 .eslintrc.yml
+.git
+.vscode
+previousSchedule.json
+

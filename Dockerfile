@@ -20,4 +20,3 @@ COPY --chown=node:node . .
 ENV DBUS_SESSION_BUS_ADDRESS autolaunch:
 
 CMD ["npm", "start"]
-# ENTRYPOINT ["tail", "-f", "/dev/null"]
