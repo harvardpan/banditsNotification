@@ -1,8 +1,14 @@
 const expect = require('chai').expect;
 const {TwitterApi} = require('twitter-api-v2');
 const config = require('../config');
+const {init} = require('../setup');
 
 describe('Twitter Integration Tests', function() {
+  before(async function() {
+    // Must initialize the environment variables from HCP Vault Secrets first
+    await init();
+  });
+
   it(`can connect to Twitter`, async function() {
     // Construct the Client
     const client = new TwitterApi({

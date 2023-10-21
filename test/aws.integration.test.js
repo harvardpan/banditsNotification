@@ -3,8 +3,14 @@ const expect = require('chai').expect;
 const {AWS, uploadFileToS3, getFileFromS3} = require('../lib/aws');
 const config = require('../config');
 const {parseSchedule, compareSchedules, serializeSchedule, deserializeSchedule} = require('../lib/helper_functions');
+const {init} = require('../setup');
 
 describe(`AWS Integration Tests`, function() {
+  before(async function() {
+    // Must initialize the environment variables from HCP Vault Secrets first
+    await init();
+  });
+
   it(`confirms that the environment variables for connecting to AWS are set`, function() {
     expect(process.env.AWS_ACCESS_KEY_ID).to.be.a('string');
     expect(process.env.AWS_SECRET_ACCESS_KEY).to.be.a('string');

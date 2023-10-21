@@ -15,6 +15,7 @@ const {
 const {
   uploadFileToS3,
 } = require('./lib/aws');
+const {init} = require('./setup');
 
 function logMessage(message) {
   const timestamp = moment().format('dddd, MMMM Do YYYY, h:mm:ss a');
@@ -48,6 +49,8 @@ async function tweetScreenshot(imageBuffer) {
 }
 
 async function main() {
+  await init(); // connect to HCP Vault Secrets and populate environment variables
+
   const browser = await puppeteer.launch({
     headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox'],

@@ -132,6 +132,56 @@ class Config {
   get aws_s3_bucket() {
     return process.env.AWS_S3_BUCKET;
   }
+
+  /**
+   * Retrieves the HCP Client ID.
+   *
+   * @readonly
+   * @type {String}
+   */
+  get hcp_client_id() {
+    return process.env.HCP_CLIENT_ID;
+  }
+
+  /**
+   * Retrieves the HCP Client Secret.
+   *
+   * @readonly
+   * @type {String}
+   */
+  get hcp_client_secret() {
+    return process.env.HCP_CLIENT_SECRET;
+  }
+
+  /**
+   * Retrieves the HCP Organization Id
+   *
+   * @readonly
+   * @type {String}
+   */
+  get hcp_organization_id() {
+    return process.env.HCP_ORGANIZATION_ID;
+  }
+
+  /**
+   * Retrieves the HCP Project Id
+   *
+   * @readonly
+   * @type {String}
+   */
+  get hcp_project_id() {
+    return process.env.HCP_PROJECT_ID;
+  }
+
+  /**
+   * Retrieves the HCP Application Name
+   *
+   * @readonly
+   * @type {String}
+   */
+  get hcp_application_name() {
+    return process.env.HCP_APP_NAME;
+  }
 }
 
 module.exports = new Config();
