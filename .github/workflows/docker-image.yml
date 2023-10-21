@@ -33,3 +33,13 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: harvardpan/banditsnotification:latest
+      - 
+        name: Push to ECR
+        id: ecr
+        uses: jwalton/gh-ecr-push@v1
+        with:
+          access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          region: us-east-1
+          local-image: harvardpan/banditsnotification:latest
+          image: banditsnotification:${{ github.sha }}, banditsnotification:latest
