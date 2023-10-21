@@ -1,8 +1,6 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 'use strict';
-const fs = require('fs');
-const path = require('path');
 const puppeteer = require('puppeteer');
 const {TwitterApi} = require('twitter-api-v2');
 const config = require('./config');
@@ -14,13 +12,16 @@ const {
   diffSchedule,
   serializeSchedule,
 } = require('./lib/helper_functions');
+const {
+  uploadFileToS3,
+} = require('./lib/aws');
 
 function logMessage(message) {
   const timestamp = moment().format('dddd, MMMM Do YYYY, h:mm:ss a');
   console.log(`INFO: ${timestamp} - ${message}`);
 }
 
-async function tweetScreenshot(screenshotFilename) {
+async function tweetScreenshot(imageBuffer) {
   const client = new TwitterApi({
     appKey: config.consumer_key,
     appSecret: config.consumer_secret,
@@ -31,7 +32,9 @@ async function tweetScreenshot(screenshotFilename) {
   // First, post all your images to Twitter
   const mediaIds = await Promise.all([
     // file path
-    client.v1.uploadMedia(screenshotFilename),
+    client.v1.uploadMedia(Buffer.from(imageBuffer), {
+      type: 'png',
+    }),
   ]);
 
   const timestamp = moment().format('dddd, MMMM Do YYYY, h:mm:ss a');
@@ -60,7 +63,7 @@ async function main() {
     const $ = cheerio.load(pageData.html);
     const scheduleNode = $('h5:contains("Upcoming Schedule")').parent(); // contains the entire schedule section
     const schedule = parseSchedule(scheduleNode.text());
-    const scheduleDiff = diffSchedule(schedule);
+    const scheduleDiff = await diffSchedule(schedule);
     if (!scheduleDiff.added.size && !scheduleDiff.deleted.size && !scheduleDiff.modified.size) {
       // If there are no changes, then we don't need to do anything.
       logMessage(`No differences detected.`);
@@ -74,30 +77,28 @@ async function main() {
 
     const screenshotFilenameBase = getTimestampedFilename('schedule-screenshot', 'png');
     const scheduleFilenameBase = screenshotFilenameBase.replace(/.png$/, '.json').replace(/-screenshot/, '');
-    const screenshotFilename = path.join(__dirname, screenshotFilenameBase);
     // Take the screenshot of the portion of the screen with the schedule
-    await page.screenshot({
-      path: screenshotFilename,
+    const imageBuffer = await page.screenshot({
+      type: 'png',
+      //      path: screenshotFilename,
       clip: {
         height: 470,
         width: 340,
         x: 150,
         y: 200,
       },
+      omitBackground: true,
     });
 
-    const PREVIOUS_SCHEDULE_FILENAME = path.join(__dirname, 'previousSchedule.json');
     // Since a diff was detected, we want to:
-    // - copy the latest screenshot to the archive
+    // - upload the latest screenshot to the archive
     // - serialize the schedule json
     // - copy the schedule json to the archive
     // - tweet out the latest screenshot
-    // - delete the screenshot
-    fs.copyFileSync(screenshotFilename, path.join(__dirname, 'archive', screenshotFilenameBase));
-    serializeSchedule(schedule, PREVIOUS_SCHEDULE_FILENAME);
-    fs.copyFileSync(PREVIOUS_SCHEDULE_FILENAME, path.join(__dirname, 'archive', scheduleFilenameBase));
-    await tweetScreenshot(screenshotFilename);
-    fs.unlinkSync(screenshotFilename);
+    await uploadFileToS3(imageBuffer, `${config.twitterUserHandle}/archive/${screenshotFilenameBase}`);
+    await serializeSchedule(schedule, `${config.twitterUserHandle}/previousSchedule.json`);
+    await serializeSchedule(schedule, `${config.twitterUserHandle}/archive/${scheduleFilenameBase}`);
+    await tweetScreenshot(imageBuffer);
   } catch (e) {
     logMessage('ERROR: Uncaught exception occurred');
     console.log(e);

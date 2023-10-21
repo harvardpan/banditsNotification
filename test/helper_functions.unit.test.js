@@ -3,9 +3,7 @@ const expect = require('chai').expect;
 const unroll = require('unroll');
 unroll.use(it);
 const moment = require('moment-timezone');
-const fs = require('fs');
-const path = require('path');
-const {parseSchedule, compareSchedules, serializeSchedule, deserializeSchedule} = require('../lib/helper_functions');
+const {parseSchedule, compareSchedules} = require('../lib/helper_functions');
 
 describe('Helper Functions Unit Tests', function() {
   const input = [
@@ -64,22 +62,5 @@ describe('Helper Functions Unit Tests', function() {
     expect(result['modified'].size).to.equal(1); // modified 10/5 from 4:45pm start to 4:30pm start.
     expect(result['modified'].get('THURSDAY, 10/5')['timeBlock']).to.equal('4:30–6:30');
     expect(result['unchanged'].size).to.equal(2); // 10/7 and 10/8 remain unchanged
-  });
-
-  it(`can serialize and deserialize the schedule to disk`, function() {
-    const a = parseSchedule(input[0]);
-    serializeSchedule(a, path.join(__dirname, 'serializedTestSchedule.bson'));
-    const b = deserializeSchedule(path.join(__dirname, 'serializedTestSchedule.bson'));
-    const result = compareSchedules(a, b);
-    expect(result['unchanged'].size).to.equal(4); // all entries unchanged
-    expect(result['added'].size).to.equal(0);
-    expect(result['deleted'].size).to.equal(0);
-    expect(result['modified'].size).to.equal(0);
-  });
-
-  after(function() {
-    if (fs.existsSync(path.join(__dirname, 'serializedTestSchedule.bson'))) {
-      fs.unlinkSync(path.join(__dirname, 'serializedTestSchedule.bson'));
-    }
   });
 });

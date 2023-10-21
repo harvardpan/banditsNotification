@@ -10,6 +10,7 @@
   "author": "Harvard Pan",
   "license": "MIT",
   "dependencies": {
+    "aws-sdk": "^2.1476.0",
     "bson": "^6.1.0",
     "cheerio": "^1.0.0-rc.12",
     "chrono-node": "^2.7.0",

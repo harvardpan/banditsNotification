@@ -84,6 +84,54 @@ class Config {
   get twitterUserHandle() {
     return process.env.TWITTER_USER_HANDLE;
   }
+
+  /**
+   * Retrieves the AWS Access Key ID. These are the same environment variables
+   * that AWS SDK uses.
+   *
+   * @readonly
+   * @type {String}
+   */
+  get aws_access_token_id() {
+    return process.env.AWS_ACCESS_KEY_ID;
+  }
+
+  /**
+   * Retrieves the AWS Secret Access Key. These are the same environment variables
+   * that the AWS SDK uses.
+   *
+   * @readonly
+   * @type {String}
+   */
+  get aws_access_token_secret() {
+    return process.env.AWS_SECRET_ACCESS_KEY;
+  }
+
+  /**
+   * Retrieves the AWS Default Region. These are the same environment variables
+   * that the AWS SDK uses.
+   *
+   * @readonly
+   * @type {String}
+   */
+  get aws_default_region() {
+    let region = 'us-east-1'; // this is the default
+    if (process.env.AWS_DEFAULT_REGION) {
+      region = process.env.AWS_DEFAULT_REGION;
+    }
+    return region;
+  }
+
+  /**
+   * Retrieves the AWS S3 Bucket name. This is where the archived screenshots
+   * and json get uploaded.
+   *
+   * @readonly
+   * @type {String}
+   */
+  get aws_s3_bucket() {
+    return process.env.AWS_S3_BUCKET;
+  }
 }
 
 module.exports = new Config();
