@@ -49,8 +49,6 @@ async function tweetScreenshot(imageBuffer) {
 }
 
 async function main() {
-  await init(); // connect to HCP Vault Secrets and populate environment variables
-
   const browser = await puppeteer.launch({
     headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -117,6 +115,8 @@ function sleep(ms) {
 }
 
 (async () => {
+  await init(); // connect to HCP Vault Secrets and populate environment variables
+
   while (true) {
     await main();
     await sleep(config.runInterval * 1000); // multiply by 1000 as sleep takes milliseconds
