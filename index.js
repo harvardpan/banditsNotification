@@ -18,7 +18,7 @@ const {
 const {init} = require('./setup');
 
 function logMessage(message) {
-  const timestamp = moment().format('dddd, MMMM Do YYYY, h:mm:ss a');
+  const timestamp = moment().tz(config.display_time_zone).format('dddd, MMMM Do YYYY, h:mm:ss a');
   console.log(`INFO: ${timestamp} - ${message}`);
 }
 
@@ -38,7 +38,7 @@ async function tweetScreenshot(imageBuffer) {
     }),
   ]);
 
-  const timestamp = moment().format('dddd, MMMM Do YYYY, h:mm:ss a');
+  const timestamp = moment().tz(config.display_time_zone).format('dddd, MMMM Do YYYY, h:mm:ss a');
   // mediaIds is a string[], can be given to .tweet
   await client.v2.tweet({
     text: `Latest Bandits 12U Schedule as of ${timestamp}. https://www.brooklinebaseball.net/bandits12u #bandits12u`,

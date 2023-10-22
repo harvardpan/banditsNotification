@@ -21,6 +21,20 @@ class Config {
   }
 
   /**
+   * Retrieves the Display Time Zone for logs and tweets
+   *
+   * @readonly
+   * @type {String}
+   */
+  get display_time_zone() {
+    const timezone = 'America/New_York'; // this is the default
+    if (process.env.DISPLAY_TIME_ZONE) {
+      region = process.env.DISPLAY_TIME_ZONE;
+    }
+    return timezone;
+  }
+
+  /**
    * Retrieves the Twitter Consumer Key - API Key
    *
    * @readonly
