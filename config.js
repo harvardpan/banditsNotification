@@ -29,7 +29,7 @@ class Config {
   get display_time_zone() {
     const timezone = 'America/New_York'; // this is the default
     if (process.env.DISPLAY_TIME_ZONE) {
-      region = process.env.DISPLAY_TIME_ZONE;
+      timezone = process.env.DISPLAY_TIME_ZONE;
     }
     return timezone;
   }
