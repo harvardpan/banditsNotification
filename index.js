@@ -62,7 +62,7 @@ async function main() {
     });
     // Parse the data with "cheerio" library
     const $ = cheerio.load(pageData.html);
-    const scheduleNode = $('h5:contains("Optional Practices")').parent(); // contains the entire schedule section
+    const scheduleNode = $('h5:contains("Winter Practices")').parent(); // contains the entire schedule section
     const schedule = parseSchedule(scheduleNode.text());
     const scheduleDiff = await diffSchedule(schedule);
     if (!scheduleDiff.added.size && !scheduleDiff.deleted.size && !scheduleDiff.modified.size) {
