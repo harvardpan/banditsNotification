@@ -67,7 +67,7 @@ async function main() {
     const scheduleDiff = await diffSchedule(schedule);
     if (!scheduleDiff.added.size && !scheduleDiff.deleted.size && !scheduleDiff.modified.size) {
       // If there are no changes, then we don't need to do anything.
-      logMessage(`No differences detected.`);
+      logMessage(`No differences detected. No need to publish notification.`);
       return;
     }
 
