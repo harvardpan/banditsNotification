@@ -144,9 +144,9 @@ function sleep(ms) {
 
 (async () => {
   await init(); // connect to HCP Vault Secrets and populate environment variables
-  const apiToken = await retrieveApiToken();
 
   while (true) {
+    const apiToken = await retrieveApiToken();
     await main(apiToken);
     await sleep(config.runInterval * 1000); // multiply by 1000 as sleep takes milliseconds
   }
