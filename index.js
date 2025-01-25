@@ -84,11 +84,50 @@ async function checkBanditsSite(settings) {
     if (!scheduleDiff.added.size && !scheduleDiff.deleted.size && !scheduleDiff.modified.size) {
       // If there are no changes, then we don't need to do anything.
       logMessage(`No differences detected. No need to publish notification.`);
+      // Log what the parsed schedule looks like.
+      logMessage('Parsed schedule:');
+      logMessage(JSON.stringify(Array.from(schedule), 
+        (key, value) => { 
+          if (key === 'parsed') { 
+            return undefined; 
+          }
+          return value;
+        }, 2));
       return;
     }
 
     // Below here, a difference was detected, so we take a screenshot.
-
+    logMessage('Schedule Differences: ');
+    if (scheduleDiff.deleted.size) {
+      logMessage('Deleted: ');
+      logMessage(JSON.stringify(Array.from(scheduleDiff.deleted),
+        (key, value) => {
+          if (key === 'parsed') {
+            return undefined;
+          }
+          return value;
+        }, 2));
+    }
+    if (scheduleDiff.added.size) {
+      logMessage('Added: ');
+      logMessage(JSON.stringify(Array.from(scheduleDiff.added),
+        (key, value) => {
+          if (key === 'parsed') {
+            return undefined;
+          } 
+          return value;
+        }, 2));
+    }
+    if (scheduleDiff.modified.size) {
+      logMessage('Modified: ');
+      logMessage(JSON.stringify(Array.from(scheduleDiff),
+        (key, value) => {
+          if (key === 'parsed') {
+            return undefined;
+          } 
+          return value;
+        }, 2));
+    }
     // Grab only the screen part relevant to the schedule
     await page.setViewport({width: 1200, height: 800, deviceScaleFactor: 2});
 
@@ -124,6 +163,13 @@ async function checkBanditsSite(settings) {
   }
 }
 async function main(apiToken) {
+  /*
+  await checkBanditsSite({ 
+    url: 'https://www.brooklinebaseball.net/bandits12u',
+    hcp_app_name: 'BanditsNotificationBotDev',
+    apiToken: apiToken
+  });
+  */
   await checkBanditsSite({ 
     url: 'https://www.brooklinebaseball.net/bandits12u',
     hcp_app_name: 'BanditsNotificationBot',
