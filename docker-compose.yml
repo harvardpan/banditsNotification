@@ -1,0 +1,30 @@
+services:
+  bandits-notification:
+    build: .
+    environment:
+      - AWS_REGION=us-east-1
+      - CONFIG_PATH=/opt/secrets.yaml
+      - S3_BUCKET=banditsnotifier-storage
+    volumes:
+      - ./secrets.yaml:/opt/secrets.yaml:ro
+      - ~/.aws:/root/.aws:ro
+    command: ["bootstrap"]
+    
+  # Lambda Runtime Interface Emulator for local testing
+  lambda-rie:
+    build: 
+      context: .
+      dockerfile: Dockerfile.lambda
+    ports:
+      - "9000:8080"
+    environment:
+      - AWS_REGION=us-east-1
+      - AWS_SDK_LOAD_CONFIG=1
+      - CONFIG_PATH=/opt/secrets.yaml
+      - S3_BUCKET=banditsnotifier-storage
+      # Pass through AWS credentials for SOPS decryption
+      - AWS_PROFILE=${AWS_PROFILE:-developmentpoweruser}
+    volumes:
+      - ./secrets.yaml:/opt/secrets.yaml:ro
+      - ~/.aws:/root/.aws:ro
+    entrypoint: ["/lambda-entrypoint.sh"]

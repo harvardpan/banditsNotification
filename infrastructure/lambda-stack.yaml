@@ -1,0 +1,173 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Bandits Notification Lambda function with container image and EventBridge scheduling'
+
+Parameters:
+  ECRRepositoryURI:
+    Type: String
+    Description: ECR repository URI for the container image
+  
+  ImageTag:
+    Type: String
+    Description: Container image tag
+    Default: latest
+  
+  S3BucketName:
+    Type: String
+    Description: S3 bucket name for storing schedules and screenshots
+    Default: banditsnotifier-storage
+  
+  KMSKeyArn:
+    Type: String
+    Description: KMS key ARN for SOPS decryption
+    Default: arn:aws:kms:us-east-1:028036396420:alias/BanditsNotifierKMSKey
+
+Resources:
+
+
+  # Lambda Execution Role
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-lambda-execution-role"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::${S3BucketName}/*"
+                  - !Sub "arn:aws:s3:::${S3BucketName}"
+        - PolicyName: KMSAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:DescribeKey
+                Resource: 
+                  - !Ref KMSKeyArn
+                  - arn:aws:kms:us-east-1:028036396420:key/72de9be2-a4a3-4142-9ba8-e872169e0f1f
+        - PolicyName: SecretsManagerAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:bandits-notification/*"
+        - PolicyName: SQSAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource: !GetAtt DeadLetterQueue.Arn
+
+  # Lambda Function
+  BanditsNotificationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-bandits-notification"
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ImageUri: !Sub "${ECRRepositoryURI}:${ImageTag}"
+      PackageType: Image
+      Timeout: 900  # 15 minutes
+      MemorySize: 1024
+      Environment:
+        Variables:
+          S3_BUCKET: !Ref S3BucketName
+          CONFIG_PATH: /opt/secrets.yaml
+      DeadLetterConfig:
+        TargetArn: !GetAtt DeadLetterQueue.Arn
+
+  # Dead Letter Queue for failed executions
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${AWS::StackName}-dlq"
+      MessageRetentionPeriod: "1209600"  # 14 days
+
+  # EventBridge Rule for scheduling (every 60 minutes)
+  ScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${AWS::StackName}-schedule"
+      Description: "Trigger Bandits Notification Lambda every 60 minutes"
+      ScheduleExpression: "rate(60 minutes)"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt BanditsNotificationFunction.Arn
+          Id: BanditsNotificationTarget
+          Input: |
+            {
+              "source": "aws.events",
+              "detail-type": "Scheduled Event",
+              "detail": {
+                "scheduled": true
+              }
+            }
+
+  # Permission for EventBridge to invoke Lambda
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref BanditsNotificationFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt ScheduleRule.Arn
+
+  # CloudWatch Log Group with retention
+  LambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${BanditsNotificationFunction}"
+      RetentionInDays: 30
+
+Outputs:
+  LambdaFunctionName:
+    Description: "Lambda function name"
+    Value: !Ref BanditsNotificationFunction
+    Export:
+      Name: !Sub "${AWS::StackName}-lambda-function-name"
+
+  LambdaFunctionArn:
+    Description: "Lambda function ARN"
+    Value: !GetAtt BanditsNotificationFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-lambda-function-arn"
+
+  ECRRepositoryURI:
+    Description: "ECR repository URI"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/development/bandits-notification"
+    Export:
+      Name: !Sub "${AWS::StackName}-ecr-repository-uri"
+
+  S3BucketName:
+    Description: "S3 bucket name"
+    Value: !Ref S3BucketName
+    Export:
+      Name: !Sub "${AWS::StackName}-s3-bucket-name"
+
+  ScheduleRuleName:
+    Description: "EventBridge rule name"
+    Value: !Ref ScheduleRule
+    Export:
+      Name: !Sub "${AWS::StackName}-schedule-rule-name"

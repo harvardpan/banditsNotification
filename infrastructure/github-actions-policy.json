@@ -1,0 +1,47 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "cloudformation:*",
+                "lambda:*",
+                "ecr:*",
+                "events:*",
+                "logs:*",
+                "sqs:*",
+                "iam:GetRole",
+                "iam:PassRole",
+                "iam:CreateRole",
+                "iam:AttachRolePolicy",
+                "iam:PutRolePolicy",
+                "iam:DetachRolePolicy",
+                "iam:DeleteRole",
+                "iam:DeleteRolePolicy",
+                "iam:UpdateAssumeRolePolicy",
+                "iam:TagRole",
+                "iam:UntagRole",
+                "iam:ListInstanceProfilesForRole"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:*"
+            ],
+            "Resource": [
+                "arn:aws:s3:::bandits-notification-*",
+                "arn:aws:s3:::bandits-notification-*/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "kms:Decrypt",
+                "kms:DescribeKey"
+            ],
+            "Resource": "arn:aws:kms:us-east-1:028036396420:alias/BanditsNotifierKMSKey"
+        }
+    ]
+}

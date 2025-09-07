@@ -16,8 +16,10 @@
     "cheerio": "^1.0.0-rc.12",
     "chrono-node": "^2.7.0",
     "dotenv": "^16.3.1",
+    "js-yaml": "^4.1.0",
     "moment-timezone": "^0.5.43",
     "puppeteer": "^21.3.8",
+    "sharp": "^0.34.3",
     "twitter-api-v2": "^1.15.1"
   },
   "devDependencies": {

@@ -1,0 +1,64 @@
+# check=skip=FromPlatformFlagConstDisallowed
+# Multi-stage build starting from chromedp/headless-shell
+FROM --platform=linux/amd64 golang:1.25.1-alpine3.22 AS build
+
+# Set the working directory
+WORKDIR /app
+
+# Copy go mod files first for better caching
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod tidy
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build the application for Linux x86_64
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags lambda.norpc -ldflags="-s -w" -o /app/main ./cmd/lambda
+
+# Use chromedp/headless-shell as the base - it has Chrome pre-installed
+FROM --platform=linux/amd64 chromedp/headless-shell:latest
+
+# Install necessary tools and AWS Lambda Runtime Interface Emulator
+USER root
+RUN apt-get update && apt-get install -y \
+    wget curl unzip ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install AWS Lambda Runtime Interface Emulator
+RUN curl -Lo /usr/bin/aws-lambda-rie https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/latest/download/aws-lambda-rie && \
+    chmod +x /usr/bin/aws-lambda-rie
+
+# Install SOPS
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then SOPS_ARCH="amd64"; elif [ "$ARCH" = "aarch64" ]; then SOPS_ARCH="arm64"; else SOPS_ARCH="amd64"; fi && \
+    wget "https://github.com/getsops/sops/releases/download/v3.8.1/sops-v3.8.1.linux.$SOPS_ARCH" -O /usr/local/bin/sops && \
+    chmod +x /usr/local/bin/sops
+
+# Copy the built application and encrypted secrets
+COPY --from=build /app/main /var/runtime/bootstrap
+COPY secrets.yaml /opt/secrets.yaml
+
+# Create Lambda-compatible entry point script for local testing only
+RUN echo '#!/bin/bash' > /lambda-entrypoint.sh && \
+    echo 'if [ -z "${AWS_LAMBDA_RUNTIME_API}" ]; then' >> /lambda-entrypoint.sh && \
+    echo '  # Local testing with RIE' >> /lambda-entrypoint.sh && \
+    echo '  exec /usr/bin/aws-lambda-rie /var/runtime/bootstrap "$@"' >> /lambda-entrypoint.sh && \
+    echo 'else' >> /lambda-entrypoint.sh && \
+    echo '  # Production Lambda execution' >> /lambda-entrypoint.sh && \
+    echo '  exec /var/runtime/bootstrap "$@"' >> /lambda-entrypoint.sh && \
+    echo 'fi' >> /lambda-entrypoint.sh && \
+    chmod +x /lambda-entrypoint.sh
+
+# Set environment variables for Chrome
+ENV CHROME_BIN=/usr/bin/google-chrome-stable
+ENV DISPLAY=:99
+
+# Run as root for Lambda compatibility
+USER root
+
+# For production Lambda, use the bootstrap directly
+# For local testing with docker-compose, override with /lambda-entrypoint.sh
+ENTRYPOINT ["/var/runtime/bootstrap"]

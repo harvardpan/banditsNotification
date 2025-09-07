@@ -1,22 +1,50 @@
-# Create image based on the official Node image from dockerhub
-FROM ghcr.io/puppeteer/puppeteer:21.3.8
+# Multi-stage build starting from chromedp/headless-shell
+FROM golang:1.25.1-alpine3.22 AS build
 
-# Use a non-root user to run all the commands
-USER node
+# Set the working directory
+WORKDIR /app
 
-WORKDIR /home/node
+# Copy go mod files first for better caching
+COPY go.mod go.sum ./
 
-# Copy dependency definitions
-COPY --chown=node:node package.json ./package.json
-COPY --chown=node:node package-lock.json ./package-lock.json
- 
-# Install dependencies
-RUN npm ci
+# Download dependencies
+RUN go mod tidy
+RUN go mod download
 
-# Get all the code needed to run the app. TODO: Figure out a way to only copy what's needed.
-COPY --chown=node:node . .
+# Copy source code
+COPY . .
 
-# Necessary to make sure that the dbus is running
-ENV DBUS_SESSION_BUS_ADDRESS autolaunch:
+# Build the application
+RUN go build -ldflags="-s -w" -o /app/main ./cmd/bandits-notification
 
-CMD ["npm", "start"]
+# Use chromedp/headless-shell as the base - it has Chrome pre-installed
+FROM chromedp/headless-shell:latest
+
+# Install necessary tools
+USER root
+RUN apt-get update && apt-get install -y \
+    wget curl unzip ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install SOPS
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then SOPS_ARCH="amd64"; elif [ "$ARCH" = "aarch64" ]; then SOPS_ARCH="arm64"; else SOPS_ARCH="amd64"; fi && \
+    wget "https://github.com/getsops/sops/releases/download/v3.8.1/sops-v3.8.1.linux.$SOPS_ARCH" -O /usr/local/bin/sops && \
+    chmod +x /usr/local/bin/sops
+
+# Copy the built application
+COPY --from=build /app/main /app/bandits-notification
+
+# Set environment variables for Chrome
+ENV CHROME_BIN=/usr/bin/google-chrome-stable
+ENV DISPLAY=:99
+
+# Run as root for Lambda compatibility
+USER root
+
+# Create writable directories for AWS SSO cache
+RUN mkdir -p /root/.aws/sso/cache && chmod 755 /root/.aws/sso/cache
+
+# Override the entrypoint from base image to run our app directly
+ENTRYPOINT []
+CMD [ "/app/bandits-notification" ]

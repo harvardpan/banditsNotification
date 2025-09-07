@@ -15,3 +15,12 @@ archive/*.png
 
 # Local Files used in processing
 previousSchedule.json
+bin/*
+
+# Test output files
+test-output/
+**/test-output/
+dry-run-output/
+**/dry-run-output/
+cmd/lambda/lambda
+lambda

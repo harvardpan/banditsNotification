@@ -1,0 +1,20 @@
+{
+    "go.toolsEnvVars": {
+        "AWS_PROFILE": "developmentpoweruser"
+    },
+    "terminal.integrated.env.osx": {
+        "AWS_PROFILE": "developmentpoweruser"
+    },
+    "terminal.integrated.env.linux": {
+        "AWS_PROFILE": "developmentpoweruser"
+    },
+    "terminal.integrated.env.windows": {
+        "AWS_PROFILE": "developmentpoweruser"
+    },
+    "go.testExplorer.enable": true,
+    "go.testExplorer.showDynamicSubtestsInEditor": true,
+    "go.testExplorer.packageDisplayMode": "flat",
+    "go.testEnvVars": {
+        "RUN_INTEGRATION_TESTS": "true"
+    }
+}

@@ -1,0 +1,144 @@
+name: Deploy to AWS Lambda
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: bandits-notification
+  
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+          
+    - name: Download dependencies
+      run: go mod download
+      
+    - name: Run unit tests
+      run: go test -v -short ./...
+      
+    - name: Run linting
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        args: --timeout=5m
+
+  build-and-deploy:
+    name: Build and Deploy
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActions-BanditsNotification
+        role-session-name: GitHubActions-Deploy
+        aws-region: ${{ env.AWS_REGION }}
+        
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+      
+    - name: Set up environment variables
+      run: |
+        echo "ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
+        echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
+        
+        # Use the existing stack name
+        echo "STACK_NAME=bandits-notification-v3" >> $GITHUB_ENV
+        echo "ENVIRONMENT=prod" >> $GITHUB_ENV
+        
+    - name: Build Docker image
+      run: |
+        docker build -f Dockerfile.lambda -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+        
+    - name: Push Docker image to ECR
+      run: |
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+        
+    - name: Deploy CloudFormation stack
+      uses: aws-actions/aws-cloudformation-github-deploy@v1
+      with:
+        name: ${{ env.STACK_NAME }}
+        template: infrastructure/lambda-stack.yaml
+        parameter-overrides: >-
+          ECRRepositoryURI=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }},
+          ImageTag=${{ env.IMAGE_TAG }},
+          S3BucketName=banditsnotifier-storage
+        capabilities: CAPABILITY_NAMED_IAM
+        no-fail-on-empty-changeset: "1"
+        
+    - name: Update Lambda function
+      run: |
+        aws lambda update-function-code \
+          --function-name $STACK_NAME-bandits-notification \
+          --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          
+    - name: Wait for Lambda update to complete
+      run: |
+        aws lambda wait function-updated \
+          --function-name $STACK_NAME-bandits-notification
+          
+    - name: Invoke Lambda function for testing
+      if: github.ref == 'refs/heads/develop'
+      run: |
+        aws lambda invoke \
+          --function-name $STACK_NAME-bandits-notification \
+          --payload '{"source":"github-actions","detail-type":"Manual Test","detail":{"test":true}}' \
+          --cli-binary-format raw-in-base64-out \
+          response.json
+        cat response.json
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'

@@ -1,0 +1,26 @@
+# Test configuration file - copy to test_config.yaml and encrypt with SOPS for testing
+# This file contains test credentials and settings for integration tests
+
+aws:
+    access_key_id: test_aws_access_key_id
+    secret_access_key: test_aws_secret_access_key
+    region: us-east-1
+    s3_bucket: test-bandits-notification-bucket
+
+app:
+    display_timezone: America/New_York
+    urls:
+        - url: https://www.brooklinebaseball.net/bandits12u  # Real Bandits 12U site
+          twitter:
+              consumer_key: test_twitter_consumer_key_12u
+              consumer_secret: test_twitter_consumer_secret_12u
+              access_token: test_twitter_access_token_12u
+              access_token_secret: test_twitter_access_token_secret_12u
+              user_handle: BanditsBotTestDev
+        - url: https://www.brooklinebaseball.net/bandits14u  # Real Bandits 14U site
+          twitter:
+              consumer_key: test_twitter_consumer_key_14u
+              consumer_secret: test_twitter_consumer_secret_14u
+              access_token: test_twitter_access_token_14u
+              access_token_secret: test_twitter_access_token_secret_14u
+              user_handle: BanditsBotTestDev
