@@ -341,6 +341,9 @@ func (c *Client) DeleteTweet(tweetID string) error {
 // generateNonce creates a random nonce for OAuth
 func generateNonce() string {
 	b := make([]byte, 16)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		// In the unlikely event that crypto/rand fails, use a timestamp fallback
+		return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("nonce_%d", time.Now().UnixNano())))
+	}
 	return base64.StdEncoding.EncodeToString(b)
 }

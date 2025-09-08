@@ -90,7 +90,10 @@ lint: deps
 	go vet ./...
 	@if command -v golangci-lint >/dev/null 2>&1; then \
 		echo "Running golangci-lint..."; \
-		golangci-lint run; \
+		golangci-lint run --timeout=5m; \
+	elif test -f $(HOME)/go/bin/golangci-lint; then \
+		echo "Running golangci-lint from ~/go/bin/..."; \
+		$(HOME)/go/bin/golangci-lint run --timeout=5m; \
 	else \
 		echo "golangci-lint not found, install with: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"; \
 	fi

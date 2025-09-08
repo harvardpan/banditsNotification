@@ -347,7 +347,7 @@ func TestTwitterConfig(t *testing.T) {
 	// Test that empty config doesn't cause panics
 	client := New(cfg)
 	if client == nil {
-		t.Error("New() returned nil with empty config")
+		t.Fatal("New() returned nil with empty config")
 	}
 
 	// Test that client stores config correctly

@@ -368,8 +368,3 @@ func SanitizeText(text string) string {
 
 	return strings.TrimSpace(text)
 }
-
-// evaluateJS is a helper method to evaluate JavaScript and return the result
-func (s *Scraper) evaluateJS(script string, result interface{}) error {
-	return chromedp.Run(s.ctx, chromedp.Evaluate(script, result))
-}
