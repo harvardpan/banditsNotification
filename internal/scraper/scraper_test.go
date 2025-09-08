@@ -54,7 +54,6 @@ func TestSanitizeText(t *testing.T) {
 	}
 }
 
-
 // Integration test for Bandits 12U site
 func TestScrapePage_Integration_12U(t *testing.T) {
 	if testing.Short() {
@@ -98,7 +97,7 @@ func TestScrapePage_Integration_12U(t *testing.T) {
 	// Save scraped HTML to file for inspection
 	htmlPath := filepath.Join(outputDir, "test_12u_scraped_content.html")
 	htmlContent := createTestHTMLFile(result.HTML, result.URL, "12U")
-	
+
 	err = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
 	if err != nil {
 		t.Errorf("Failed to save 12U HTML content: %v", err)
@@ -153,7 +152,7 @@ func TestScrapePage_Integration_14U(t *testing.T) {
 	// Save scraped HTML to file for inspection
 	htmlPath := filepath.Join(outputDir, "test_14u_scraped_content.html")
 	htmlContent := createTestHTMLFile(result.HTML, result.URL, "14U")
-	
+
 	err = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
 	if err != nil {
 		t.Errorf("Failed to save 14U HTML content: %v", err)
@@ -240,13 +239,13 @@ func validateScheduleContent(t *testing.T, result *ScrapePageResult, team string
 
 	// Verify the HTML contains schedule-related content (but not the heading itself)
 	htmlLower := strings.ToLower(result.HTML)
-	hasScheduleContent := strings.Contains(htmlLower, "game") || 
-						  strings.Contains(htmlLower, "practice") ||
-						  strings.Contains(htmlLower, "vs") ||
-						  strings.Contains(htmlLower, "pm") ||
-						  strings.Contains(htmlLower, "field") ||
-						  strings.Contains(htmlLower, "tbd")
-	
+	hasScheduleContent := strings.Contains(htmlLower, "game") ||
+		strings.Contains(htmlLower, "practice") ||
+		strings.Contains(htmlLower, "vs") ||
+		strings.Contains(htmlLower, "pm") ||
+		strings.Contains(htmlLower, "field") ||
+		strings.Contains(htmlLower, "tbd")
+
 	if !hasScheduleContent {
 		t.Errorf("%s: ScrapePage() HTML doesn't contain expected schedule content (games, practices, etc.)", team)
 	}
@@ -328,8 +327,8 @@ func TestDebugSchedulePosition(t *testing.T) {
 		fmt.Printf("Window Height: %v\n", debugInfo["windowHeight"])
 		fmt.Printf("Viewport Height: %v\n", debugInfo["viewportHeight"])
 		fmt.Printf("==========================================\n")
-		
-		t.Logf("Found 'Upcoming Schedule' at viewport position %v, document position %v", 
+
+		t.Logf("Found 'Upcoming Schedule' at viewport position %v, document position %v",
 			debugInfo["viewportTop"], debugInfo["documentTop"])
 	} else {
 		t.Log("Could not find 'Upcoming Schedule' text on the page")
@@ -340,9 +339,9 @@ func TestDebugSchedulePosition(t *testing.T) {
 func TestScrapePage_Mock(t *testing.T) {
 	// This test demonstrates how you might mock the scraping functionality
 	// In a real implementation, you'd inject dependencies to make this testable
-	
+
 	t.Skip("Mock implementation would require dependency injection refactor")
-	
+
 	// Expected approach:
 	// 1. Create an interface for the Chrome driver
 	// 2. Inject the driver into Scraper

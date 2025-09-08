@@ -34,11 +34,11 @@ SATURDAY, 12/10 Away Field 10:00am Tournament Game`
 
 func TestParseSchedule(t *testing.T) {
 	tests := []struct {
-		name           string
-		content        string
-		expectedCount  int
-		expectedKeys   []string
-		shouldContain  map[string]*ScheduleEntry
+		name          string
+		content       string
+		expectedCount int
+		expectedKeys  []string
+		shouldContain map[string]*ScheduleEntry
 	}{
 		{
 			name:          "parses HTML schedule from scraper",
@@ -53,7 +53,7 @@ func TestParseSchedule(t *testing.T) {
 					TimeBlock:  "3:00-5:00",
 				},
 				"WEDNESDAY, 12/7": {
-					DayOfWeek:  "WEDNESDAY", 
+					DayOfWeek:  "WEDNESDAY",
 					DayOfMonth: "12/7",
 					Location:   "Game vs Tigers, Field B",
 					TimeBlock:  "6:00",
@@ -124,7 +124,7 @@ func TestCompareSchedules(t *testing.T) {
 		"MONDAY, 12/5": {
 			DayOfWeek:  "MONDAY",
 			DayOfMonth: "12/5",
-			Location:   "Field A", 
+			Location:   "Field A",
 			TimeBlock:  "3:00pm",
 		},
 		"WEDNESDAY, 12/7": {
@@ -138,7 +138,7 @@ func TestCompareSchedules(t *testing.T) {
 	newSchedule := Schedule{
 		"MONDAY, 12/5": {
 			DayOfWeek:  "MONDAY",
-			DayOfMonth: "12/5", 
+			DayOfMonth: "12/5",
 			Location:   "Field C", // Changed location
 			TimeBlock:  "3:00pm",
 		},
@@ -174,7 +174,7 @@ func TestCompareSchedules(t *testing.T) {
 			},
 		},
 		{
-			name: "handles nil old schedule", 
+			name: "handles nil old schedule",
 			old:  nil,
 			new:  newSchedule,
 			expected: &ScheduleDiff{
@@ -189,9 +189,9 @@ func TestCompareSchedules(t *testing.T) {
 			old:  oldSchedule,
 			new:  oldSchedule,
 			expected: &ScheduleDiff{
-				Added:   Schedule{},
-				Deleted: Schedule{},
-				Modified: Schedule{},
+				Added:     Schedule{},
+				Deleted:   Schedule{},
+				Modified:  Schedule{},
 				Unchanged: oldSchedule,
 			},
 		},
@@ -390,7 +390,7 @@ func TestGetTimestampedFilename(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := GetTimestampedFilename(tt.base, tt.extension)
-			
+
 			if result == "" {
 				t.Error("GetTimestampedFilename() returned empty string")
 			}
@@ -407,7 +407,7 @@ func TestGetTimestampedFilename(t *testing.T) {
 
 			// Check that it contains year (basic timestamp validation)
 			currentYear := time.Now().Year()
-			yearStr := string(rune(currentYear/1000 + '0')) + string(rune((currentYear/100)%10 + '0')) + string(rune((currentYear/10)%10 + '0')) + string(rune(currentYear%10 + '0'))
+			yearStr := string(rune(currentYear/1000+'0')) + string(rune((currentYear/100)%10+'0')) + string(rune((currentYear/10)%10+'0')) + string(rune(currentYear%10+'0'))
 			if !contains(result, yearStr) {
 				t.Errorf("GetTimestampedFilename() = %s, should contain current year %s", result, yearStr)
 			}
@@ -429,7 +429,7 @@ func TestParseSchedule_Integration(t *testing.T) {
 		// 1. Use the scraper to get real HTML content
 		// 2. Parse it with ParseSchedule
 		// 3. Verify the results make sense
-		
+
 		// For now, test with realistic HTML content based on what we saw
 		realisticHTML := `<span style="color:#0B1C2F;" class="wixui-rich-text__text">Our plan for the week ahead.</span>
 <p class="font_8 wixui-rich-text__text" style="line-height:1.2em; font-size:12px;">
@@ -463,7 +463,7 @@ func TestParseSchedule_Integration(t *testing.T) {
 			if entry.Location == "" && entry.TimeBlock == "" {
 				t.Errorf("Entry %s has both empty Location and TimeBlock", key)
 			}
-			
+
 			t.Logf("Parsed entry %s: %+v", key, entry)
 		}
 	})
@@ -473,7 +473,7 @@ func TestParseSchedule_Integration(t *testing.T) {
 func TestSaveLoadSchedule_Mock(t *testing.T) {
 	// This would require a mock S3 client
 	t.Skip("Would require mock S3 client implementation")
-	
+
 	// Expected pattern:
 	// 1. Create a mock S3 client that implements the same interface
 	// 2. Test SaveSchedule and LoadSchedule with the mock
@@ -522,11 +522,11 @@ func BenchmarkParseScheduleText(b *testing.B) {
 
 func BenchmarkCompareSchedules(b *testing.B) {
 	schedule1 := Schedule{
-		"MONDAY, 12/5": {DayOfWeek: "MONDAY", DayOfMonth: "12/5", Location: "Field A"},
+		"MONDAY, 12/5":  {DayOfWeek: "MONDAY", DayOfMonth: "12/5", Location: "Field A"},
 		"TUESDAY, 12/6": {DayOfWeek: "TUESDAY", DayOfMonth: "12/6", Location: "Field B"},
 	}
 	schedule2 := Schedule{
-		"MONDAY, 12/5": {DayOfWeek: "MONDAY", DayOfMonth: "12/5", Location: "Field C"},
+		"MONDAY, 12/5":    {DayOfWeek: "MONDAY", DayOfMonth: "12/5", Location: "Field C"},
 		"WEDNESDAY, 12/7": {DayOfWeek: "WEDNESDAY", DayOfMonth: "12/7", Location: "Field D"},
 	}
 

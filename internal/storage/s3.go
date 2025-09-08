@@ -6,11 +6,11 @@ import (
 	"io"
 	"os"
 
+	"bandits-notification/internal/config"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"bandits-notification/internal/config"
 )
 
 // S3Client wraps AWS S3 operations
@@ -25,7 +25,7 @@ func NewS3Client(cfg *config.AWSConfig) (*S3Client, error) {
 	awsConfig := &aws.Config{
 		Region: aws.String(cfg.Region),
 	}
-	
+
 	// If explicit credentials are provided, use them. Otherwise, use default credential chain
 	if cfg.AccessKeyID != "" && cfg.SecretAccessKey != "" {
 		awsConfig.Credentials = credentials.NewStaticCredentials(
@@ -39,11 +39,11 @@ func NewS3Client(cfg *config.AWSConfig) (*S3Client, error) {
 	// 2. Shared credentials file (~/.aws/credentials)
 	// 3. IAM roles (for EC2 instances)
 	// 4. SSO credentials (when logged in via `aws sso login`)
-	
+
 	// Create AWS session with profile support
 	var sess *session.Session
 	var err error
-	
+
 	// Check if AWS_PROFILE environment variable is set
 	if profile := os.Getenv("AWS_PROFILE"); profile != "" {
 		sess, err = session.NewSessionWithOptions(session.Options{
@@ -53,7 +53,7 @@ func NewS3Client(cfg *config.AWSConfig) (*S3Client, error) {
 	} else {
 		sess, err = session.NewSession(awsConfig)
 	}
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AWS session: %w", err)
 	}

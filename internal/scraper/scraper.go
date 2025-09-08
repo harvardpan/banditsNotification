@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chromedp/chromedp"
 	"github.com/chromedp/cdproto/page"
+	"github.com/chromedp/chromedp"
 )
 
 // Scraper handles web scraping operations
@@ -21,9 +21,9 @@ type Scraper struct {
 func New() *Scraper {
 	// Detect if we're running in AWS Lambda environment
 	isLambda := os.Getenv("AWS_LAMBDA_RUNTIME_API") != "" || os.Getenv("CONFIG_PATH") == "/opt/secrets.yaml"
-	
+
 	var opts []chromedp.ExecAllocatorOption
-	
+
 	if isLambda {
 		// Lambda/Container environment - use restrictive flags
 		opts = []chromedp.ExecAllocatorOption{
@@ -73,12 +73,12 @@ func New() *Scraper {
 
 	// Create allocator context with custom options
 	allocCtx, allocCancel := chromedp.NewExecAllocator(context.Background(), opts...)
-	
+
 	// Create browser context with disabled logging and longer timeout
 	ctx, cancel := chromedp.NewContext(allocCtx, chromedp.WithLogf(func(string, ...interface{}) {}))
-	
+
 	return &Scraper{
-		ctx:    ctx,
+		ctx: ctx,
 		cancel: func() {
 			cancel()
 			allocCancel()
@@ -121,7 +121,7 @@ func (s *Scraper) ScrapePage(url string) (*ScrapePageResult, error) {
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			// Extract HTML that corresponds to the screenshot area
 			var screenshotHTML string
-			
+
 			// First get the screenshot Y position
 			var scheduleY float64 = 200 // Default fallback position
 			var result map[string]interface{}
@@ -150,13 +150,13 @@ func (s *Scraper) ScrapePage(url string) (*ScrapePageResult, error) {
 					return {found: false, fallback: 200};
 				})()
 			`, &result).Do(ctx)
-			
+
 			if err == nil && result["found"] == true {
 				if documentTop, ok := result["documentTop"].(float64); ok {
 					scheduleY = documentTop
 				}
 			}
-			
+
 			// Now extract HTML elements that fall within the screenshot bounds
 			scriptWithY := fmt.Sprintf(`
 				(function() {
@@ -266,9 +266,9 @@ func (s *Scraper) ScrapePage(url string) (*ScrapePageResult, error) {
 					return '';
 				})()
 			`, scheduleY)
-			
+
 			err = chromedp.Evaluate(scriptWithY, &screenshotHTML).Do(ctx)
-			
+
 			if err == nil && screenshotHTML != "" {
 				html = screenshotHTML
 			} else {
@@ -280,7 +280,7 @@ func (s *Scraper) ScrapePage(url string) (*ScrapePageResult, error) {
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			// Find the "Upcoming Schedule" text element and get its position
 			var scheduleY float64 = 200 // Default fallback position
-			
+
 			// Use JavaScript to find the element with "Upcoming Schedule" text
 			var result map[string]interface{}
 			err := chromedp.Evaluate(`
@@ -314,14 +314,14 @@ func (s *Scraper) ScrapePage(url string) (*ScrapePageResult, error) {
 					return {found: false, fallback: 200};
 				})()
 			`, &result).Do(ctx)
-			
+
 			if err == nil && result["found"] == true {
 				// Use document-relative position (viewport + scroll)
 				if documentTop, ok := result["documentTop"].(float64); ok {
 					scheduleY = documentTop
 				}
 			}
-			
+
 			// Capture screenshot with dynamic clipping based on "Upcoming Schedule" position
 			buf, err := page.CaptureScreenshot().
 				WithClip(&page.Viewport{
@@ -351,22 +351,21 @@ func (s *Scraper) ScrapePage(url string) (*ScrapePageResult, error) {
 	}, nil
 }
 
-
 // SanitizeText cleans up problematic characters from text
 func SanitizeText(text string) string {
 	if text == "" {
 		return text
 	}
-	
+
 	// Remove invisible characters like U+200B
 	text = strings.ReplaceAll(text, "\u200B", "")
 	text = strings.ReplaceAll(text, "\u200C", "")
 	text = strings.ReplaceAll(text, "\u200D", "")
 	text = strings.ReplaceAll(text, "\uFEFF", "")
-	
+
 	// Replace en-dash with regular dash
 	text = strings.ReplaceAll(text, "–", "-")
-	
+
 	return strings.TrimSpace(text)
 }
 

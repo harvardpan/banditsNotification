@@ -16,14 +16,14 @@ import (
 func TestNew(t *testing.T) {
 	cfg := &config.TwitterConfig{
 		ConsumerKey:       "test-consumer-key",
-		ConsumerSecret:    "test-consumer-secret", 
+		ConsumerSecret:    "test-consumer-secret",
 		AccessToken:       "test-access-token",
 		AccessTokenSecret: "test-access-token-secret",
 		UserHandle:        "testuser",
 	}
 
 	client := New(cfg)
-	
+
 	if client == nil {
 		t.Fatal("New() returned nil client")
 	}
@@ -41,7 +41,7 @@ func TestVerifyCredentials(t *testing.T) {
 	cfg := &config.TwitterConfig{
 		ConsumerKey:       "test-consumer-key",
 		ConsumerSecret:    "test-consumer-secret",
-		AccessToken:       "test-access-token", 
+		AccessToken:       "test-access-token",
 		AccessTokenSecret: "test-access-token-secret",
 		UserHandle:        "testuser",
 	}
@@ -50,7 +50,7 @@ func TestVerifyCredentials(t *testing.T) {
 
 	// This should fail with real API call since we don't have valid credentials
 	user, err := client.VerifyCredentials()
-	
+
 	// Should get an error for invalid credentials
 	if err == nil {
 		t.Error("VerifyCredentials() expected error for invalid credentials but got none")
@@ -69,7 +69,7 @@ func TestUploadMediaAndPostTweet(t *testing.T) {
 		ConsumerKey:       "test-consumer-key",
 		ConsumerSecret:    "test-consumer-secret",
 		AccessToken:       "test-access-token",
-		AccessTokenSecret: "test-access-token-secret", 
+		AccessTokenSecret: "test-access-token-secret",
 		UserHandle:        "testuser",
 	}
 
@@ -124,7 +124,7 @@ func TestUploadMediaAndPostTweet(t *testing.T) {
 
 			// Step 2: Post tweet with media
 			tweetID, err := client.PostTweetWithMediaAndReturnID(tt.message, mediaIDs)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Error("PostTweetWithMediaAndReturnID() expected error for invalid credentials but got none")
@@ -157,7 +157,7 @@ func TestOAuth1Signature(t *testing.T) {
 	// Test OAuth1 signature generation
 	oauthParams := map[string]string{
 		"oauth_consumer_key":     "test-consumer-key",
-		"oauth_token":            "test-access-token", 
+		"oauth_token":            "test-access-token",
 		"oauth_signature_method": "HMAC-SHA1",
 		"oauth_timestamp":        "1234567890",
 		"oauth_nonce":            "test-nonce",
@@ -233,7 +233,7 @@ func TestTwitterClient_Integration(t *testing.T) {
 
 	// Use first URL config for testing
 	twitterClient := New(&cfg.App.URLs[0].Twitter)
-	
+
 	// Test credential verification
 	user, err := twitterClient.VerifyCredentials()
 	if err != nil {
@@ -249,7 +249,7 @@ func TestTwitterClient_Integration(t *testing.T) {
 
 	// Track tweet ID for cleanup
 	var tweetID string
-	
+
 	t.Run("Post Text-Only Tweet", func(t *testing.T) {
 		// Post a text-only tweet first to test basic functionality
 		tweetID, err = twitterClient.PostTweetWithMediaAndReturnID(testMessage, nil)
@@ -258,7 +258,7 @@ func TestTwitterClient_Integration(t *testing.T) {
 		}
 		t.Logf("Successfully posted text-only tweet: %s", tweetID)
 	})
-	
+
 	// Test media upload with proper PNG
 	t.Run("Media Upload Test", func(t *testing.T) {
 		mediaID, err := twitterClient.UploadMedia(testImageData)
@@ -266,7 +266,7 @@ func TestTwitterClient_Integration(t *testing.T) {
 			t.Fatalf("Media upload failed: %v", err)
 		}
 		t.Logf("Media upload succeeded: %s", mediaID)
-		
+
 		// Test posting tweet with the uploaded media
 		testMessageWithImage := fmt.Sprintf("🧪 Integration test with image - %s", time.Now().Format("2006-01-02 15:04:05"))
 		imageTweetID, err := twitterClient.PostTweetWithMediaAndReturnID(testMessageWithImage, []string{mediaID})
@@ -274,7 +274,7 @@ func TestTwitterClient_Integration(t *testing.T) {
 			t.Fatalf("Failed to post tweet with image: %v", err)
 		}
 		t.Logf("Successfully posted tweet with image: %s", imageTweetID)
-		
+
 		// Clean up the image tweet
 		t.Cleanup(func() {
 			if imageTweetID != "" {
@@ -316,7 +316,7 @@ func BenchmarkOAuth1Signature(b *testing.B) {
 	cfg := &config.TwitterConfig{
 		ConsumerKey:       "test-consumer-key",
 		ConsumerSecret:    "test-consumer-secret",
-		AccessToken:       "test-access-token", 
+		AccessToken:       "test-access-token",
 		AccessTokenSecret: "test-access-token-secret",
 		UserHandle:        "testuser",
 	}
@@ -343,18 +343,18 @@ func BenchmarkOAuth1Signature(b *testing.B) {
 // Test helper functions
 func TestTwitterConfig(t *testing.T) {
 	cfg := &config.TwitterConfig{}
-	
+
 	// Test that empty config doesn't cause panics
 	client := New(cfg)
 	if client == nil {
 		t.Error("New() returned nil with empty config")
 	}
-	
+
 	// Test that client stores config correctly
 	if client.config != cfg {
 		t.Error("New() did not store config reference correctly")
 	}
-	
+
 	// Test HTTP client is created
 	if client.httpClient == nil {
 		t.Error("New() did not create HTTP client")
@@ -366,7 +366,7 @@ func TestTwitterConfig(t *testing.T) {
 func createTestPNG() []byte {
 	// Create a 100x100 RGBA image with a blue background (similar to Sharp test)
 	img := image.NewRGBA(image.Rect(0, 0, 100, 100))
-	
+
 	// Fill with blue color (similar to the Sharp config: r: 0, g: 100, b: 200)
 	blue := color.RGBA{0, 100, 200, 255}
 	for y := 0; y < 100; y++ {
@@ -374,12 +374,12 @@ func createTestPNG() []byte {
 			img.Set(x, y, blue)
 		}
 	}
-	
+
 	// Encode as PNG
 	var buf bytes.Buffer
 	if err := png.Encode(&buf, img); err != nil {
 		panic(fmt.Sprintf("Failed to create test PNG: %v", err))
 	}
-	
+
 	return buf.Bytes()
 }

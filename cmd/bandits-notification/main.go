@@ -180,7 +180,7 @@ func handleDryRunMode(result *processor.ProcessResult, timestamp time.Time, urlC
 		easternTime = time.UTC
 	}
 	etTimestamp := timestamp.In(easternTime)
-	
+
 	day := etTimestamp.Day()
 	timestampStr := fmt.Sprintf("%s, %s %d%s %d, %s",
 		etTimestamp.Format("Monday"),

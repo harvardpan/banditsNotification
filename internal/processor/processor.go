@@ -187,7 +187,7 @@ func handleNormalMode(result *ProcessResult, s3Client *storage.S3Client, twitter
 		easternTime = time.UTC
 	}
 	etTimestamp := opts.Timestamp.In(easternTime)
-	
+
 	day := etTimestamp.Day()
 	timestampStr := fmt.Sprintf("%s, %s %d%s %d, %s",
 		etTimestamp.Format("Monday"),

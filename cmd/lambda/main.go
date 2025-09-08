@@ -7,24 +7,24 @@ import (
 	"os"
 	"time"
 
-	"github.com/aws/aws-lambda-go/lambda"
 	"bandits-notification/internal/config"
+	"bandits-notification/internal/processor"
 	"bandits-notification/internal/scraper"
 	"bandits-notification/internal/storage"
-	"bandits-notification/internal/processor"
+	"github.com/aws/aws-lambda-go/lambda"
 )
 
 // Event represents the input event for the Lambda function
 type Event struct {
-	Source      string `json:"source"`
-	DetailType  string `json:"detail-type"`
-	Detail      any `json:"detail"`
+	Source     string `json:"source"`
+	DetailType string `json:"detail-type"`
+	Detail     any    `json:"detail"`
 }
 
 // Response represents the response from the Lambda function
 type Response struct {
-	StatusCode int    `json:"statusCode"`
-	Message    string `json:"message"`
+	StatusCode    int         `json:"statusCode"`
+	Message       string      `json:"message"`
 	ProcessedURLs []URLResult `json:"processedUrls"`
 }
 
@@ -68,12 +68,12 @@ func handleRequest(ctx context.Context, event Event) (Response, error) {
 	defer scraperClient.Close()
 
 	var results []URLResult
-	
+
 	// Process each URL
 	for _, urlConfig := range cfg.App.URLs {
 		result := processURL(ctx, urlConfig, s3Client, scraperClient)
 		results = append(results, result)
-		
+
 		// Log the result
 		if result.Error != "" {
 			log.Printf("Error processing %s: %s", result.URL, result.Error)
@@ -88,7 +88,7 @@ func handleRequest(ctx context.Context, event Event) (Response, error) {
 	successful := 0
 	failed := 0
 	tweetsPosted := 0
-	
+
 	for _, result := range results {
 		if result.Error != "" {
 			failed++
@@ -112,9 +112,9 @@ func processURL(_ context.Context, urlConfig config.URLConfig, s3Client *storage
 		Mode:      processor.ModeNormal,
 		Timestamp: time.Now(),
 	}
-	
+
 	result := processor.ProcessURL(urlConfig, s3Client, scraperClient, opts)
-	
+
 	// Convert processor result to lambda URLResult
 	return URLResult{
 		URL:           result.URL,
@@ -124,7 +124,6 @@ func processURL(_ context.Context, urlConfig config.URLConfig, s3Client *storage
 		Error:         result.Error,
 	}
 }
-
 
 func main() {
 	lambda.Start(handleRequest)

@@ -39,12 +39,11 @@ type User struct {
 	ID         string `json:"id_str"`
 }
 
-
 // UploadMedia uploads image data to Twitter and returns media ID
 func (c *Client) UploadMedia(imageData []byte) (string, error) {
 	// Twitter's v1.1 media upload API expects base64 encoded data in form parameters
 	encodedData := base64.StdEncoding.EncodeToString(imageData)
-	
+
 	params := url.Values{
 		"media_data": []string{encodedData},
 	}
@@ -55,7 +54,7 @@ func (c *Client) UploadMedia(imageData []byte) (string, error) {
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	
+
 	// Add OAuth1 authorization header
 	err = c.addOAuth1Header(req, params)
 	if err != nil {
@@ -83,7 +82,6 @@ func (c *Client) UploadMedia(imageData []byte) (string, error) {
 
 	return result.MediaIDString, nil
 }
-
 
 // VerifyCredentials checks if the Twitter credentials are valid
 func (c *Client) VerifyCredentials() (*User, error) {
@@ -114,7 +112,7 @@ func (c *Client) VerifyCredentials() (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	fmt.Printf("[TWITTER] Verified credentials for @%s\n", user.ScreenName)
 	return &user, nil
 }
@@ -124,7 +122,7 @@ func (c *Client) addOAuth1Header(req *http.Request, params url.Values) error {
 	// Generate OAuth parameters
 	nonce := generateNonce()
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-	
+
 	oauthParams := map[string]string{
 		"oauth_consumer_key":     c.config.ConsumerKey,
 		"oauth_token":            c.config.AccessToken,
@@ -150,16 +148,16 @@ func (c *Client) addOAuth1Header(req *http.Request, params url.Values) error {
 		}
 	}
 	sort.Strings(oauthKeys)
-	
+
 	var authParts []string
 	for _, key := range oauthKeys {
 		value := oauthParams[key]
 		authParts = append(authParts, fmt.Sprintf(`%s="%s"`, oauthPercentEncode(key), oauthPercentEncode(value)))
 	}
-	
+
 	authHeader := "OAuth " + strings.Join(authParts, ", ")
 	req.Header.Set("Authorization", authHeader)
-	
+
 	return nil
 }
 
@@ -180,7 +178,7 @@ func parseURL(fullURL string) (string, map[string]string) {
 	parts := strings.Split(fullURL, "?")
 	baseURL := parts[0]
 	params := make(map[string]string)
-	
+
 	if len(parts) > 1 {
 		for _, param := range strings.Split(parts[1], "&") {
 			if kv := strings.Split(param, "="); len(kv) == 2 {
@@ -197,20 +195,20 @@ func parseURL(fullURL string) (string, map[string]string) {
 func (c *Client) generateOAuth1Signature(method, fullURL string, oauthParams map[string]string, postParams url.Values) (string, error) {
 	// Extract base URL and query parameters
 	baseURL, urlParams := parseURL(fullURL)
-	
+
 	// Combine OAuth, URL query, and POST parameters
 	allParams := make(map[string]string)
-	
+
 	// Add OAuth parameters
 	for k, v := range oauthParams {
 		allParams[k] = v
 	}
-	
+
 	// Add URL query parameters
 	for k, v := range urlParams {
 		allParams[k] = v
 	}
-	
+
 	// Add POST parameters
 	for k, v := range postParams {
 		if len(v) > 0 {
@@ -259,13 +257,13 @@ func (c *Client) PostTweetWithMediaAndReturnID(text string, mediaIDs []string) (
 	requestBody := map[string]interface{}{
 		"text": text,
 	}
-	
+
 	if len(mediaIDs) > 0 {
 		requestBody["media"] = map[string]interface{}{
 			"media_ids": mediaIDs,
 		}
 	}
-	
+
 	jsonData, err := json.Marshal(requestBody)
 	if err != nil {
 		return "", err
@@ -313,7 +311,7 @@ func (c *Client) PostTweetWithMediaAndReturnID(text string, mediaIDs []string) (
 // DeleteTweet deletes a tweet by ID
 func (c *Client) DeleteTweet(tweetID string) error {
 	endpoint := fmt.Sprintf("https://api.twitter.com/1.1/statuses/destroy/%s.json", tweetID)
-	
+
 	req, err := http.NewRequest("POST", endpoint, nil)
 	if err != nil {
 		return err

@@ -230,7 +230,7 @@ func TestCompleteWorkflow_RealIntegration(t *testing.T) {
 			easternTime = time.UTC // Fallback
 		}
 		etTimestamp := timestamp.In(easternTime)
-		
+
 		day := etTimestamp.Day()
 		timestampStr := fmt.Sprintf("%s, %s %d%s %d, %s",
 			etTimestamp.Format("Monday"),

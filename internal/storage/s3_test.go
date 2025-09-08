@@ -108,7 +108,7 @@ func TestIsNoSuchKeyError(t *testing.T) {
 			if tt.errMsg != "" {
 				err = &testError{msg: tt.errMsg}
 			}
-			
+
 			result := isNoSuchKeyError(err)
 			if result != tt.expected {
 				t.Errorf("isNoSuchKeyError() = %v, want %v", result, tt.expected)
