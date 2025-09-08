@@ -11,7 +11,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: bandits-notification
+  ECR_REPOSITORY: development/bandits-notification
   
 jobs:
   test:
