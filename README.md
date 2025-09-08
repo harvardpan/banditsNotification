@@ -2,7 +2,7 @@
 
 This Go application scrapes the Brookline Bandits 12U and 14U web pages and sends out a tweet whenever it detects a difference in the schedule from the last time it checked. The tweet includes a screenshot of the web page captured using headless Chrome.
 
-This is a rewrite of the original Node.js version with improved performance, better security through SOPS encryption, and multiple deployment options including AWS Lambda.
+A Go application with improved performance, better security through SOPS encryption, and multiple deployment options including AWS Lambda.
 
 ## Prerequisites
 
@@ -245,13 +245,6 @@ Key packages:
 - `internal/twitter/`: Twitter API integration
 - `internal/processor/`: Main processing orchestration
 
-## Migration from Node.js Version
-
-1. Install Go 1.21+ and SOPS
-2. Convert `.env` credentials to `secrets.yaml` format
-3. Encrypt `secrets.yaml` with SOPS
-4. Update any cron jobs or systemd services to use Go binary
-5. Existing S3 archives are compatible with the Go version
 
 ## Troubleshooting
 

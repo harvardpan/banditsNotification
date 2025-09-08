@@ -1,13 +1,7 @@
-# nyc test coverage
-.nyc_output
-coverage/
+# Go build artifacts
+bin/*
 
-# Dependency directories
-node_modules/
-
-# Environment Variable Files
-.env
-
+# OS files  
 .DS_Store
 
 archive/*.json

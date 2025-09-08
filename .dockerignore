@@ -1,15 +1,17 @@
-# nyc test coverage
-.nyc_output
-coverage
+# Test output and build artifacts
+test-output/
+dry-run-output/
+bin/
+*.log
 
-node_modules
-npm-debug.log
+# Archive data
 archive/**
+previousSchedule.json
+
+# Development files
 .gitignore
 .dockerignore
 .DS_Store
-.eslintrc.yml
 .git
 .vscode
-previousSchedule.json
 
