@@ -17,6 +17,9 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     
     steps:
     - name: Checkout code
@@ -59,6 +62,9 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    permissions:
+      id-token: write
+      contents: read
     
     steps:
     - name: Checkout code
@@ -131,6 +137,9 @@ jobs:
     name: Security Scan
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      security-events: write
     
     steps:
     - name: Checkout code
