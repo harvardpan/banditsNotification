@@ -62,6 +62,8 @@ Resources:
                 Resource:
                   - 'arn:aws:s3:::bandits-notification-*'
                   - 'arn:aws:s3:::bandits-notification-*/*'
+                  - 'arn:aws:s3:::banditsnotifier-storage'
+                  - 'arn:aws:s3:::banditsnotifier-storage/*'
               - Effect: Allow
                 Action:
                   - kms:Decrypt
