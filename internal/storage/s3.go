@@ -91,7 +91,7 @@ func (s *S3Client) DownloadFile(key string) ([]byte, error) {
 		}
 		return nil, fmt.Errorf("failed to download file from S3: %w", err)
 	}
-	defer result.Body.Close()
+	defer func() { _ = result.Body.Close() }()
 
 	data, err := io.ReadAll(result.Body)
 	if err != nil {

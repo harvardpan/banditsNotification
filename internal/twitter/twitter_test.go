@@ -203,7 +203,7 @@ func TestGenerateNonce(t *testing.T) {
 
 	// Test that nonce is base64 encoded (should not contain invalid characters)
 	for _, char := range nonce1 {
-		if !((char >= 'A' && char <= 'Z') || (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == '+' || char == '/' || char == '=') {
+		if (char < 'A' || char > 'Z') && (char < 'a' || char > 'z') && (char < '0' || char > '9') && char != '+' && char != '/' && char != '=' {
 			t.Errorf("generateNonce() returned invalid base64 character: %c", char)
 		}
 	}
