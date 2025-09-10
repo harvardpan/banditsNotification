@@ -29,6 +29,13 @@ This is a Go application that monitors the Brookline Bandits 12U and 14U basebal
 - `make test-integration` - Run integration tests (requires configuration)
 - `make test-coverage` - Run tests with coverage report
 
+### Testing Strategy
+- **Unit Tests**: Each internal package has comprehensive unit tests (`*_test.go` files)
+- **Integration Tests**: End-to-end workflow tests in `test/integration_test.go`
+- **Test Configuration**: Separate `test_config.yaml` for integration test credentials
+- **Environment Isolation**: Integration tests controlled by `RUN_INTEGRATION_TESTS` environment variable
+- **Continuous Testing**: Automated test execution in GitHub Actions CI pipeline
+
 ### Linting
 - `make lint` - Run linting and formatting (go fmt, go vet, golangci-lint)
 
@@ -43,6 +50,14 @@ This is a Go application that monitors the Brookline Bandits 12U and 14U basebal
 - `make lambda-deploy` - Deploy to AWS Lambda using infrastructure scripts
 - `make lambda-invoke` - Invoke the deployed Lambda function
 
+### CI/CD Pipeline (GitHub Actions)
+- Automated deployment triggered on pushes to `main` or `develop` branches
+- OIDC authentication for secure, keyless AWS access
+- Multi-stage pipeline: test → lint → build → deploy
+- ECR image builds and Lambda function updates
+- Security scanning with Trivy on pull requests
+- Integration test execution in staging environment
+
 ## Code Architecture
 
 ### Main Entry Points
@@ -54,7 +69,7 @@ This is a Go application that monitors the Brookline Bandits 12U and 14U basebal
 - `internal/scraper/` - Web scraping using chromedp (headless Chrome)
 - `internal/schedule/` - Schedule parsing, comparison, serialization, and time utilities
 - `internal/storage/` - AWS S3 integration for archiving screenshots and schedule data
-- `internal/twitter/` - Twitter API v1 integration for posting tweets with media
+- `internal/twitter/` - Custom Twitter API v1 client with OAuth1 implementation for posting tweets with media
 - `internal/processor/` - Main processing logic orchestrating scraping, comparison, and posting
 
 ### Key Dependencies
@@ -64,6 +79,11 @@ This is a Go application that monitors the Brookline Bandits 12U and 14U basebal
 - **goquery** - HTML parsing for schedule extraction
 - **gopkg.in/yaml.v3** - YAML configuration parsing
 - Built-in **time** package - Date/time handling with timezone support
+
+### Key Implementation Details
+- **Custom Twitter OAuth1**: Complete OAuth1 implementation for Twitter API v1, including signature generation and request signing
+- **Environment-Aware Scraper**: chromedp configuration automatically adapts between local development and Lambda execution environments
+- **Dual Screenshot Strategy**: Captures both screenshots and corresponding HTML content for comprehensive archival
 
 ### Data Flow
 1. Application loads encrypted secrets from SOPS-managed secrets.yaml
@@ -88,5 +108,109 @@ Multiple URLs can be configured for monitoring different schedules with differen
 ### Deployment Architecture
 The Go implementation supports multiple deployment patterns:
 - **Standalone Binary** - Direct execution or cron job scheduling
-- **Docker Container** - Containerized execution in any container runtime
+- **Docker Container** - Containerized execution in any container runtime  
 - **AWS Lambda** - Serverless execution triggered by EventBridge on a schedule
+
+### Infrastructure as Code
+- **CloudFormation Templates**: Complete AWS infrastructure defined in `infrastructure/` directory
+  - `lambda-stack.yaml` - Lambda function, IAM roles, ECR repository, and EventBridge schedule
+  - `github-actions-role.yaml` - OIDC provider and IAM role for GitHub Actions CI/CD
+- **Automated Deployment**: Infrastructure updates deployed via GitHub Actions using CloudFormation
+- **Environment Management**: Separate configurations for development and production environments
+
+# Using Gemini CLI for Large Codebase Analysis
+
+When analyzing large codebases or multiple files that might exceed context limits, use the Gemini CLI with its massive context window.
+
+## File and Directory Inclusion Syntax
+
+Use the `@` syntax to include files and directories in your Gemini prompts. The paths should be relative to WHERE you run the gemini command:
+
+### Examples:
+
+**Single file analysis:**
+```bash
+gemini "@src/main.py Explain this file's purpose and structure"
+```
+
+**Multiple files:**
+```bash
+gemini "@package.json @src/index.js Analyze the dependencies used in the code"
+```
+
+**Entire directory:**
+```bash
+gemini "@src/ Summarize the architecture of this codebase"
+```
+
+**Multiple directories:**
+```bash
+gemini "@src/ @tests/ Analyze test coverage for the source code"
+```
+
+**Current directory and subdirectories:**
+```bash
+gemini "@./ Give me an overview of this entire project"
+```
+
+## Implementation Verification Examples
+
+**Check if a feature is implemented:**
+```bash
+gemini "@src/ @lib/ Has dark mode been implemented in this codebase? Show me the relevant files and functions"
+```
+
+**Verify authentication implementation:**
+```bash
+gemini "@src/ @middleware/ Is JWT authentication implemented? List all auth-related endpoints and middleware"
+```
+
+**Check for specific patterns:**
+```bash
+gemini "@src/ Are there any React hooks that handle WebSocket connections? List them with file paths"
+```
+
+**Verify error handling:**
+```bash
+gemini "@src/ @api/ Is proper error handling implemented for all API endpoints? Show examples of try-catch blocks"
+```
+
+**Check for rate limiting:**
+```bash
+gemini "@backend/ @middleware/ Is rate limiting implemented for the API? Show the implementation details"
+```
+
+**Verify caching strategy:**
+```bash
+gemini "@src/ @lib/ @services/ Is Redis caching implemented? List all cache-related functions and their usage"
+```
+
+**Check for specific security measures:**
+```bash
+gemini "@src/ @api/ Are SQL injection protections implemented? Show how user inputs are sanitized"
+```
+
+**Verify test coverage for features:**
+```bash
+gemini "@src/payment/ @tests/ Is the payment processing module fully tested? List all test cases"
+```
+
+## When to Use Gemini CLI
+
+Use `gemini` when:
+- Analyzing entire codebases or large directories
+- Comparing multiple large files  
+- Need to understand project-wide patterns or architecture
+- Current context window is insufficient for the task
+- Working with files totaling more than 100KB
+- Verifying if specific features, patterns, or security measures are implemented
+- Checking for the presence of certain coding patterns across the entire codebase
+
+## Important Notes
+
+- Paths in `@` syntax are relative to your current working directory when invoking gemini
+- The CLI will include file contents directly in the context
+- No need for `--yolo` flag for read-only analysis
+- Gemini's context window can handle entire codebases that would overflow Claude's context
+- When checking implementations, be specific about what you're looking for to get accurate results
+  
