@@ -20,6 +20,7 @@ type ScheduleEntry struct {
 	DayOfMonth string     `json:"dayOfMonth"`
 	Location   string     `json:"location"`
 	TimeBlock  string     `json:"timeBlock"`
+	Purpose    string     `json:"purpose,omitempty"`
 	ParsedTime *time.Time `json:"parsedTime,omitempty"`
 }
 
@@ -91,7 +92,7 @@ func ParseSchedule(htmlContent string) (Schedule, error) {
 				dayOfMonth := dateMatch[2]
 
 				// Parse activity details
-				timeBlock, location := parseActivityText(element.text)
+				purpose, location, timeBlock := parseEventText(element.text)
 
 				// Create the entry
 				entry := &ScheduleEntry{
@@ -99,6 +100,7 @@ func ParseSchedule(htmlContent string) (Schedule, error) {
 					DayOfMonth: dayOfMonth,
 					Location:   location,
 					TimeBlock:  timeBlock,
+					Purpose:    purpose,
 				}
 
 				// Try to parse the time
@@ -125,37 +127,70 @@ type scheduleElement struct {
 	text        string
 }
 
-// parseActivityText extracts time block and location from activity text
-func parseActivityText(text string) (timeBlock, location string) {
+// parseEventText extracts purpose, location, and time block from event text
+// Handles both HTML activity text and plain text schedule entries
+func parseEventText(text string) (purpose, location, timeBlock string) {
 	text = strings.TrimSpace(scraper.SanitizeText(text))
 
-	// Look for time patterns like "3:30–6:00" or "10:30"
-	timeRegex := regexp.MustCompile(`\d+:\d+([-–—]\d+:\d+)?`)
+	// Look for time patterns like "3:30–6:00", "10:30am", or "10:30"
+	timeRegex := regexp.MustCompile(`\d+:\d+([-–—]\d+:\d+)?(am|pm)?`)
 	timeMatch := timeRegex.FindString(text)
 
 	if timeMatch != "" {
 		timeBlock = timeMatch
+		// Remove am/pm for consistency
+		timeBlock = strings.TrimSuffix(strings.TrimSuffix(timeBlock, "am"), "pm")
 		// Replace various dash characters with standard dash
 		timeBlock = strings.ReplaceAll(timeBlock, "–", "-")
 		timeBlock = strings.ReplaceAll(timeBlock, "—", "-")
 
-		// Location is everything before the time block
+		// Everything before the time block contains purpose and location
 		beforeTime := strings.Split(text, timeMatch)[0]
-		location = strings.TrimSpace(strings.TrimSuffix(beforeTime, ","))
-		// Remove trailing comma and extra whitespace
-		location = strings.TrimSpace(strings.TrimSuffix(location, ","))
-	} else {
-		// No time block found, check for other patterns
-		parts := strings.Split(text, ",")
+		beforeTime = strings.TrimSpace(strings.TrimSuffix(beforeTime, ","))
+		parts := strings.Split(beforeTime, ",")
+		// Filter out empty parts
+		var filteredParts []string
+		for _, part := range parts {
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" {
+				filteredParts = append(filteredParts, trimmed)
+			}
+		}
+		parts = filteredParts
 		if len(parts) >= 2 {
-			// Assume first part after activity type is location
-			location = strings.TrimSpace(parts[len(parts)-2])
+			// Last part is location, everything before is purpose
+			location = strings.TrimSpace(parts[len(parts)-1])
+			purposeParts := parts[:len(parts)-1]
+			purpose = strings.TrimSpace(strings.Join(purposeParts, ", "))
+		} else if len(parts) == 1 {
+			// Only one part - assume it's the location
+			location = strings.TrimSpace(parts[0])
+		}
+	} else {
+		// No time block found, parse purpose and location from comma-separated parts
+		parts := strings.Split(text, ",")
+		// Filter out empty parts
+		var filteredParts []string
+		for _, part := range parts {
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" {
+				filteredParts = append(filteredParts, trimmed)
+			}
+		}
+		parts = filteredParts
+
+		if len(parts) >= 2 {
+			// Last part is location, everything before is purpose
+			location = strings.TrimSpace(parts[len(parts)-1])
+			purposeParts := parts[:len(parts)-1]
+			purpose = strings.TrimSpace(strings.Join(purposeParts, ", "))
 		} else {
-			location = text
+			// Single part - assume it's the location
+			location = strings.TrimSpace(text)
 		}
 	}
 
-	return timeBlock, location
+	return purpose, location, timeBlock
 }
 
 // parseScheduleFromText is a fallback parser for plain text
@@ -189,8 +224,8 @@ func parseScheduleFromText(text string) (Schedule, error) {
 			content = text[startIdx:]
 		}
 
-		// Extract time and location from content
-		timeBlock, location := parseTimeAndLocation(content)
+		// Extract purpose, location, and time from content
+		purpose, location, timeBlock := parseEventText(content)
 
 		// If no meaningful content was found, skip this entry
 		if location == "" && timeBlock == "" {
@@ -203,6 +238,7 @@ func parseScheduleFromText(text string) (Schedule, error) {
 			DayOfMonth: dayOfMonth,
 			Location:   location,
 			TimeBlock:  timeBlock,
+			Purpose:    purpose,
 		}
 
 		// Try to parse the time
@@ -219,38 +255,6 @@ func parseScheduleFromText(text string) (Schedule, error) {
 	}
 
 	return schedule, nil
-}
-
-// parseTimeAndLocation extracts time block and location from content
-func parseTimeAndLocation(content string) (timeBlock, location string) {
-	content = strings.TrimSpace(content)
-
-	// Look for time patterns like "3:00-5:00pm" or "10:30am"
-	timeRegex := regexp.MustCompile(`\d+:\d+([-–]\d+:\d+)?(am|pm)?`)
-	timeMatch := timeRegex.FindString(content)
-
-	if timeMatch != "" {
-		timeBlock = timeMatch
-		// Remove am/pm for consistency
-		timeBlock = strings.TrimSuffix(strings.TrimSuffix(timeBlock, "am"), "pm")
-		// Replace various dash characters with standard dash
-		timeBlock = strings.ReplaceAll(timeBlock, "–", "-")
-		timeBlock = strings.ReplaceAll(timeBlock, "—", "-")
-
-		// Location is everything before the time block
-		parts := strings.Split(content, timeMatch)
-		if len(parts) > 0 {
-			location = strings.TrimSpace(parts[0])
-			location = strings.TrimSuffix(location, ",")
-			location = strings.TrimSpace(location)
-		}
-	} else {
-		// No time block found, entire content is location
-		location = content
-	}
-
-	location = scraper.SanitizeText(location)
-	return timeBlock, location
 }
 
 // parseTime attempts to parse a time string into a time.Time
@@ -300,7 +304,7 @@ func CompareSchedules(old, new Schedule) *ScheduleDiff {
 			diff.Added[key] = newEntry
 		} else {
 			// Check if modified
-			if oldEntry.Location != newEntry.Location || oldEntry.TimeBlock != newEntry.TimeBlock {
+			if oldEntry.Location != newEntry.Location || oldEntry.TimeBlock != newEntry.TimeBlock || oldEntry.Purpose != newEntry.Purpose {
 				diff.Modified[key] = newEntry
 			} else {
 				diff.Unchanged[key] = newEntry

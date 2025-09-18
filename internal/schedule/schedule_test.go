@@ -49,13 +49,15 @@ func TestParseSchedule(t *testing.T) {
 				"MONDAY, 12/5": {
 					DayOfWeek:  "MONDAY",
 					DayOfMonth: "12/5",
-					Location:   "Team Practice, Field A",
+					Purpose:    "Team Practice",
+					Location:   "Field A",
 					TimeBlock:  "3:00-5:00",
 				},
 				"WEDNESDAY, 12/7": {
 					DayOfWeek:  "WEDNESDAY",
 					DayOfMonth: "12/7",
-					Location:   "Game vs Tigers, Field B",
+					Purpose:    "Game vs Tigers",
+					Location:   "Field B",
 					TimeBlock:  "6:00",
 				},
 			},
@@ -112,6 +114,9 @@ func TestParseSchedule(t *testing.T) {
 				}
 				if actual.TimeBlock != expected.TimeBlock {
 					t.Errorf("ParseSchedule() key %s TimeBlock = %s, want %s", key, actual.TimeBlock, expected.TimeBlock)
+				}
+				if actual.Purpose != expected.Purpose {
+					t.Errorf("ParseSchedule() key %s Purpose = %s, want %s", key, actual.Purpose, expected.Purpose)
 				}
 			}
 		})

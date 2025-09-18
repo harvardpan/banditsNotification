@@ -16,5 +16,6 @@
     "go.testExplorer.packageDisplayMode": "flat",
     "go.testEnvVars": {
         "RUN_INTEGRATION_TESTS": "true"
-    }
+    },
+    "makefile.configureOnOpen": false
 }
