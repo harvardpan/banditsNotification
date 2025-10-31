@@ -95,8 +95,8 @@ func ProcessURL(urlConfig config.URLConfig, s3Client *storage.S3Client, scrapeCl
 	// Compare schedules
 	diff := schedule.CompareSchedules(previousSchedule, currentSchedule)
 
-	// Check if there are changes or if this is the first run
-	if !diff.HasChanges() && len(previousSchedule) > 0 {
+	// Check if there are changes
+	if !diff.HasChanges() {
 		log.Println("No schedule changes detected")
 		return result
 	}
