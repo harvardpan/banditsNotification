@@ -56,6 +56,9 @@ func ParseSchedule(htmlContent string) (Schedule, error) {
 	// Extract date headers and activity details
 	doc.Find("*").Each(func(i int, s *goquery.Selection) {
 		text := strings.TrimSpace(s.Text())
+		// Remove zero-width spaces that may appear in the HTML
+		text = strings.ReplaceAll(text, "\u200b", "")
+		text = strings.TrimSpace(text)
 		if text == "" {
 			return
 		}
@@ -67,14 +70,24 @@ func ParseSchedule(htmlContent string) (Schedule, error) {
 				elementType: "date",
 				text:        text,
 			})
-		} else if strings.Contains(text, ",") && (strings.Contains(text, ":") ||
-			strings.Contains(strings.ToLower(text), "practice") ||
-			strings.Contains(strings.ToLower(text), "game")) {
-			// This looks like activity details
-			elements = append(elements, scheduleElement{
-				elementType: "activity",
-				text:        text,
-			})
+		} else {
+			// Check for simplified date format (e.g., "11/3: BTC, 5:30–7:30")
+			// This must be checked BEFORE the activity pattern since it's more specific
+			simpleDatePattern := regexp.MustCompile(`^(\d+/\d+):\s*(.+)$`)
+			if match := simpleDatePattern.FindStringSubmatch(text); len(match) == 3 {
+				elements = append(elements, scheduleElement{
+					elementType: "simple-date",
+					text:        text,
+				})
+			} else if strings.Contains(text, ",") && (strings.Contains(text, ":") ||
+				strings.Contains(strings.ToLower(text), "practice") ||
+				strings.Contains(strings.ToLower(text), "game")) {
+				// This looks like activity details
+				elements = append(elements, scheduleElement{
+					elementType: "activity",
+					text:        text,
+				})
+			}
 		}
 	})
 
@@ -113,6 +126,38 @@ func ParseSchedule(htmlContent string) (Schedule, error) {
 
 				// Use the date as the key
 				key := fmt.Sprintf("%s, %s", dayOfWeek, dayOfMonth)
+				schedule[key] = entry
+			}
+		} else if element.elementType == "simple-date" {
+			// Handle simplified date format (e.g., "11/3: BTC, 5:30–7:30")
+			simpleDatePattern := regexp.MustCompile(`^(\d+/\d+):\s*(.+)$`)
+			match := simpleDatePattern.FindStringSubmatch(element.text)
+			if len(match) == 3 {
+				dayOfMonth := match[1]
+				activityText := match[2]
+
+				// Parse activity details
+				purpose, location, timeBlock := parseEventText(activityText)
+
+				// Create the entry (without day of week since it's not provided)
+				entry := &ScheduleEntry{
+					DayOfWeek:  "", // Not provided in this format
+					DayOfMonth: dayOfMonth,
+					Location:   location,
+					TimeBlock:  timeBlock,
+					Purpose:    purpose,
+				}
+
+				// Try to parse the time
+				if timeBlock != "" {
+					parsedTime := parseTime(dayOfMonth, timeBlock)
+					if parsedTime != nil {
+						entry.ParsedTime = parsedTime
+					}
+				}
+
+				// Use the date as the key (without day of week)
+				key := dayOfMonth
 				schedule[key] = entry
 			}
 		}
@@ -197,13 +242,11 @@ func parseEventText(text string) (purpose, location, timeBlock string) {
 func parseScheduleFromText(text string) (Schedule, error) {
 	text = scraper.SanitizeText(text)
 
-	// Parse individual entries using the original logic
-	dayPattern := regexp.MustCompile(`(?i)(SUNDAY|MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY),\s*(\d+/\d+)`)
-	dayMatches := dayPattern.FindAllStringSubmatch(text, -1)
-
 	schedule := make(Schedule)
 
-	// Split the text by day matches to get the content for each day
+	// First, try to parse traditional format with day names
+	dayPattern := regexp.MustCompile(`(?i)(SUNDAY|MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY),\s*(\d+/\d+)`)
+	dayMatches := dayPattern.FindAllStringSubmatch(text, -1)
 	dayIndices := dayPattern.FindAllStringSubmatchIndex(text, -1)
 
 	for i, match := range dayMatches {
@@ -251,6 +294,50 @@ func parseScheduleFromText(text string) (Schedule, error) {
 
 		// Use the full match as the key
 		key := fmt.Sprintf("%s, %s", dayOfWeek, dayOfMonth)
+		schedule[key] = entry
+	}
+
+	// Also parse simplified date format (e.g., "11/3: BTC, 5:30–7:30")
+	// Clean zero-width spaces first
+	text = strings.ReplaceAll(text, "\u200b", "")
+	simpleDatePattern := regexp.MustCompile(`(?m)^(\d+/\d+):\s*(.+)$`)
+	simpleDateMatches := simpleDatePattern.FindAllStringSubmatch(text, -1)
+
+	for _, match := range simpleDateMatches {
+		if len(match) < 3 {
+			continue
+		}
+
+		dayOfMonth := match[1]
+		activityText := match[2]
+
+		// Parse activity details
+		purpose, location, timeBlock := parseEventText(activityText)
+
+		// If no meaningful content was found, skip this entry
+		if location == "" && timeBlock == "" {
+			continue
+		}
+
+		// Create the entry
+		entry := &ScheduleEntry{
+			DayOfWeek:  "", // Not provided in this format
+			DayOfMonth: dayOfMonth,
+			Location:   location,
+			TimeBlock:  timeBlock,
+			Purpose:    purpose,
+		}
+
+		// Try to parse the time
+		if timeBlock != "" {
+			parsedTime := parseTime(dayOfMonth, timeBlock)
+			if parsedTime != nil {
+				entry.ParsedTime = parsedTime
+			}
+		}
+
+		// Use the date as the key (without day of week)
+		key := dayOfMonth
 		schedule[key] = entry
 	}
 
