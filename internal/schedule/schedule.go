@@ -71,9 +71,10 @@ func ParseSchedule(htmlContent string) (Schedule, error) {
 				text:        text,
 			})
 		} else {
-			// Check for simplified date format (e.g., "11/3: BTC, 5:30–7:30")
+			// Check for simplified date format (e.g., "11/3: BTC, 5:30–7:30" or "11/19 : BTC, 6:00-7:30")
 			// This must be checked BEFORE the activity pattern since it's more specific
-			simpleDatePattern := regexp.MustCompile(`^(\d+/\d+):\s*(.+)$`)
+			// Note: Some entries have space before the colon (e.g., "11/19 :")
+			simpleDatePattern := regexp.MustCompile(`^(\d+/\d+)\s*:\s*(.+)$`)
 			if match := simpleDatePattern.FindStringSubmatch(text); len(match) == 3 {
 				elements = append(elements, scheduleElement{
 					elementType: "simple-date",
@@ -129,8 +130,8 @@ func ParseSchedule(htmlContent string) (Schedule, error) {
 				schedule[key] = entry
 			}
 		} else if element.elementType == "simple-date" {
-			// Handle simplified date format (e.g., "11/3: BTC, 5:30–7:30")
-			simpleDatePattern := regexp.MustCompile(`^(\d+/\d+):\s*(.+)$`)
+			// Handle simplified date format (e.g., "11/3: BTC, 5:30–7:30" or "11/19 : BTC, 6:00-7:30")
+			simpleDatePattern := regexp.MustCompile(`^(\d+/\d+)\s*:\s*(.+)$`)
 			match := simpleDatePattern.FindStringSubmatch(element.text)
 			if len(match) == 3 {
 				dayOfMonth := match[1]
@@ -297,10 +298,10 @@ func parseScheduleFromText(text string) (Schedule, error) {
 		schedule[key] = entry
 	}
 
-	// Also parse simplified date format (e.g., "11/3: BTC, 5:30–7:30")
+	// Also parse simplified date format (e.g., "11/3: BTC, 5:30–7:30" or "11/19 : BTC, 6:00-7:30")
 	// Clean zero-width spaces first
 	text = strings.ReplaceAll(text, "\u200b", "")
-	simpleDatePattern := regexp.MustCompile(`(?m)^(\d+/\d+):\s*(.+)$`)
+	simpleDatePattern := regexp.MustCompile(`(?m)^(\d+/\d+)\s*:\s*(.+)$`)
 	simpleDateMatches := simpleDatePattern.FindAllStringSubmatch(text, -1)
 
 	for _, match := range simpleDateMatches {
