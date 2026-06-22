@@ -4,6 +4,10 @@ This Go application scrapes the Brookline Bandits 12U and 14U web pages and send
 
 A Go application with improved performance, better security through SOPS encryption, and multiple deployment options including AWS Lambda.
 
+> **⚠️ Currently shut down (end of 2025–2026 season).** The AWS deployment was torn down to stop
+> costs, including the SOPS/KMS key — so the committed `secrets.yaml` can no longer be decrypted.
+> To bring the service back online next season, follow [SEASON_RESTART.md](SEASON_RESTART.md).
+
 ## Prerequisites
 
 1. **Go 1.21+** - This application requires Go 1.21 or later
